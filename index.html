@@ -188,7 +188,7 @@
                 
                 <div>
                     <label for="discussion-timer" class="block text-sm font-medium text-gray-300 mb-2">Discussion Timer (seconds)</label>
-                    <input type="number" id="discussion-timer" class="form-input" value="90" min="0">
+                    <input type="number" id="discussion-timer" class="form-input" value="0" min="0">
                     <p class="text-xs text-gray-500 mt-1">Set to 0 for no timer.</p>
                 </div>
                 
@@ -901,7 +901,7 @@
                 inputs.numImpostors.value = '1';
                 inputs.gameMode[0].checked = true;
                 inputs.categorySelect.value = '_all';
-                inputs.discussionTimer.value = '90';
+                inputs.discussionTimer.value = '0';
                 inputs.hideDefinitions.checked = false;
                 
                 // Update conditional inputs visibility

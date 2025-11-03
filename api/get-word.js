@@ -10,8 +10,6 @@ export default async function handler(request, response) {
     // Vercel will automatically make it available here.
     const wordsApiKey = process.env.WORDS_API_KEY;
 
-    // --- (Insecure Fallback - Use only for quick local testing) ---
-    // const wordsApiKey = "71d9cb3bbfmsh9a743d5022b89a6p1706fdjsn926d67c4ba94"; // <-- Your key
 
     if (!wordsApiKey) {
         return response.status(500).json({ error: "Server configuration error: Missing WORDS_API_KEY." });

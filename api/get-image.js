@@ -8,8 +8,6 @@ export default async function handler(request, response) {
     // Name it: UNSPLASH_API_KEY
     const unsplashApiKey = process.env.UNSPLASH_API_KEY;
 
-    // --- (Insecure Fallback - Use only for quick local testing) ---
-    // const unsplashApiKey = "N3iMDjWYpWJRhzGmbPakKjPtssaVSxSAMPDdd_rILnM"; // <-- Your key
 
     if (!unsplashApiKey) {
         return response.status(500).json({ error: "Server configuration error: Missing UNSPLASH_API_KEY." });
