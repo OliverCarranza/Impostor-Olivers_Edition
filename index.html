@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impostor - Game Host</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* Set default font and dark mode */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* gray-900 */
+        }
+        /* ... (all other styles are identical) ... */
+        .form-check {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            display: inline-block;
+            position: relative;
+            background-color: #374151; /* gray-700 */
+            border: 1px solid #4B5563; /* gray-600 */
+            color: #4F46E5; /* indigo-600 */
+            height: 1.25rem;
+            width: 1.25rem;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .form-radio {
+            border-radius: 50%;
+        }
+        .form-checkbox {
+            border-radius: 0.25rem;
+        }
+        .form-check:checked {
+            background-color: #4F46E5; /* indigo-600 */
+            border-color: #6366F1; /* indigo-500 */
+        }
+        .form-radio:checked::after {
+            content: '';
+            display: block;
+            border-radius: 50%;
+            width: 0.5rem;
+            height: 0.5rem;
+            background: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .form-checkbox:checked::after {
+            content: '';
+            display: block;
+            width: 0.35rem;
+            height: 0.7rem;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg) translate(-25%, -35%);
+            position: absolute;
+            left: 50%;
+            top: 50%;
+        }
+        .form-check:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+        }
+        /* Custom input/select field styles */
+        .form-input {
+            background-color: #1F2937; /* gray-800 */
+            border: 1px solid #374151; /* gray-700 */
+            color: white;
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 0.75rem 1rem; /* p-3 px-4 */
+            width: 100%;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239CA3AF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        input.form-input {
+             background-image: none;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #4F46E5; /* indigo-600 */
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+        }
+        /* Hide number input arrows */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            background-image: none;
+        }
+        
+        /* Message Box for errors */
+        #message-box {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 2px solid #f3f3f3; /* Light grey */
+            border-top: 2px solid #4F46E5; /* Indigo */
+            border-radius: 50%;
+            width: 1rem;
+            height: 1rem;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main App Container -->
+    <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md">
+
+        <!-- Screen 1: Setup Screen -->
+        <div id="setup-screen" class="space-y-6">
+            <h1 class="text-3xl font-bold text-center text-indigo-400">Impostor Host</h1>
+            
+            <!-- Game Settings Form -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="total-players" class="block text-sm font-medium text-gray-300 mb-2">Total Players</label>
+                    <input type="number" id="total-players" class="form-input" value="5" min="3">
+                </div>
+                <div>
+                    <label for="num-impostors" class="block text-sm font-medium text-gray-300 mb-2">Impostors</label>
+                    <input type="number" id="num-impostors" class="form-input" value="1" min="1">
+                </div>
+            </div>
+
+            <!-- Game Mode Selection -->
+            <fieldset class="space-y-3">
+                <legend class="text-sm font-medium text-gray-300 mb-2">Game Mode</legend>
+                
+                <label for="mode-word-classic" class="flex items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-all">
+                    <input type="radio" id="mode-word-classic" name="game-mode" value="word-classic" class="form-check form-radio" checked>
+                    <span class="ml-2 text-sm font-medium text-gray-200">Word Game (Classic)</span>
+                </label>
+
+                <label for="mode-word-different" class="flex items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-all">
+                    <input type="radio" id="mode-word-different" name="game-mode" value="word-different" class="form-check form-radio">
+                    <span class="ml-2 text-sm font-medium text-gray-200">Word Game (Different Word)</span>
+                </label>
+
+                <label for="mode-image" class="flex items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-all">
+                    <input type="radio" id="mode-image" name="game-mode" value="image" class="form-check form-radio">
+                    <span class="ml-2 text-sm font-medium text-gray-200">Image Game (Classic)</span>
+                </label>
+
+                <label for="mode-image-different" class="flex items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-all">
+                    <input type="radio" id="mode-image-different" name="game-mode" value="image-different" class="form-check form-radio">
+                    <span class="ml-2 text-sm font-medium text-gray-200">Image Game (Different Image)</span>
+                </label>
+            </fieldset>
+
+            <!-- Category Selection -->
+            <div id="category-select-container" class="space-y-2 hidden">
+                <label for="category-select" class="block text-sm font-medium text-gray-300">Category</label>
+                <select id="category-select" class="form-input"></select>
+            </div>
+
+            <!-- Difficulty Settings -->
+            <fieldset class="space-y-3">
+                <legend class="text-sm font-medium text-gray-300 mb-2">Difficulty</legend>
+                
+                <div>
+                    <label for="discussion-timer" class="block text-sm font-medium text-gray-300 mb-2">Discussion Timer (seconds)</label>
+                    <input type="number" id="discussion-timer" class="form-input" value="90" min="0">
+                    <p class="text-xs text-gray-500 mt-1">Set to 0 for no timer.</p>
+                </div>
+                
+                <label for="hide-definitions" class="flex items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-all">
+                    <input type="checkbox" id="hide-definitions" class="form-check form-checkbox">
+                    <span class="ml-2 text-sm font-medium text-gray-200">Hide word definitions</span>
+                </label>
+            </fieldset>
+
+
+            <button id="start-game-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-200 transform active:scale-95 flex items-center justify-center">
+                <span id="start-game-text">Start Game</span>
+                <span id="start-game-spinner" class="spinner hidden"></span>
+            </button>
+        </div>
+
+        <!-- Screen 2: Pass Screen -->
+        <div id="pass-screen" class="hidden text-center py-16 space-y-8">
+            <h2 id="pass-title" class="text-3xl font-bold text-gray-200">Pass to Player 1</h2>
+            <p class="text-lg text-gray-400">Tap below to see your role.</p>
+            <button id="show-role-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 px-4 rounded-lg shadow-lg transition-all duration-200 transform active:scale-95 text-xl">
+                REVEAL ROLE
+            </button>
+        </div>
+
+        <!-- Screen 3: Role Reveal Screen -->
+        <div id="reveal-screen" class="hidden text-center py-10 space-y-6">
+            <h2 class="text-2xl font-semibold text-gray-300">Your role is...</h2>
+            
+            <!-- This area will be filled by JS -->
+            <div id="role-display-area" class="min-h-[16rem] flex items-center justify-center p-4 bg-gray-900 rounded-lg shadow-inner">
+                <!-- Example: <h3 class="text-5xl font-extrabold text-red-500 animate-pulse">You are the IMPOSTOR</h3> -->
+            </div>
+            
+            <button id="hide-role-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-200 transform active:scale-95">
+                I've Seen My Role
+            </button>
+        </div>
+
+        <!-- Screen 4: Game In Progress Screen -->
+        <div id="game-screen" class="hidden text-center py-12 space-y-6">
+            <h2 class="text-3xl font-bold text-green-400">All Roles Assigned!</h2>
+
+            <!-- Timer Display -->
+            <div id="timer-display-container" class="hidden">
+                <p class="text-lg text-gray-300">Time Remaining:</p>
+                <h3 id="timer-display" class="text-6xl font-bold text-indigo-400">01:30</h3>
+            </div>
+            
+            <p id="game-instructions" class="text-lg text-gray-300">
+                It's time to play! Start giving your clues.
+            </p>
+            <p class="text-gray-400">
+                After you've discussed and voted, tap below to see who was who.
+            </p>
+            <div class="space-y-4 pt-4">
+                <button id="reveal-all-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-200 transform active:scale-95">
+                    Reveal All Roles
+                </button>
+                <button id="new-game-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-200 transform active:scale-95">
+                    Start New Game
+                </button>
+            </div>
+        </div>
+
+        <!-- Screen 5: All Roles Revealed Screen -->
+        <div id="all-roles-screen" class="hidden py-8 space-y-6">
+            <h2 class="text-3xl font-bold text-center text-indigo-400">Final Roles</h2>
+            
+            <div id="final-secrets-info" class="p-4 bg-gray-900 rounded-lg text-left text-gray-300 space-y-3">
+                <!-- Info filled by JS -->
+            </div>
+            
+            <ul id="all-roles-list" class="space-y-2 text-lg text-gray-200 bg-gray-700 p-4 rounded-lg">
+                <!-- List filled by JS, e.g.:
+                <li class="p-2 bg-gray-800 rounded">Player 1: <span class="font-bold text-cyan-400">Player</span></li>
+                <li class="p-2 bg-gray-800 rounded">Player 2: <span class="font-bold text-red-500">Impostor</span></li>
+                -->
+            </ul>
+            
+            <button id="new-game-btn-2" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-200 transform active:scale-95">
+                Start New Game
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Error Message Box -->
+    <div id="message-box" class="fixed top-5 right-5 bg-red-600 text-white py-3 px-5 rounded-lg shadow-lg opacity-0 transform -translate-y-10">
+        <span id="message-text"></span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- API Keys REMOVED ---
+            // API keys are no longer stored here. They live on the server.
+            
+            // --- Hardcoded Word Bank ---
+            // A map of user-friendly category names to their WordsAPI query parameters
+            const categoryApiMap = {
+                '_all': { name: 'Any Category', query: '' },
+                'animal': { name: 'Animals', query: '&typeOf=animal' },
+                'plant': { name: 'Plants', query: '&typeOf=plant' },
+                'food': { name: 'Food', query: '&typeOf=food' },
+                'tool': { name: 'Tools', query: '&typeOf=tool' },
+                'clothing': { name: 'Clothing', query: '&typeOf=clothing' },
+                'bodyPart': { name: 'Body Parts', query: '&typeOf=body+part' },
+                'science': { name: 'Science', query: '&inCategory=science' },
+                'music': { name: 'Music', query: '&inCategory=music' },
+                'sport': { name: 'Sports', query: '&typeOf=sport' },
+                'vehicle': { name: 'Vehicles', query: '&typeOf=vehicle' },
+                'furniture': { name: 'Furniture', query: '&typeOf=furniture' },
+                'profession': { name: 'Professions', query: '&typeOf=profession' },
+                'building': { name: 'Buildings', query: '&typeOf=building' },
+                'weapon': { name: 'Weapons', query: '&typeOf=weapon' },
+                'country': { name: 'Countries', query: '&typeOf=country' },
+                'substance': { name: 'Substances', query: '&typeOf=substance' },
+            };
+
+            // --- Global State ---
+            let gameState = {};
+            let roles = [];
+            let currentPlayerIndex = 0;
+            let timerInterval = null; // For the discussion timer
+
+            // --- DOM Elements ---
+            const screens = {
+                setup: document.getElementById('setup-screen'),
+                pass: document.getElementById('pass-screen'),
+                reveal: document.getElementById('reveal-screen'),
+                game: document.getElementById('game-screen'),
+                allRoles: document.getElementById('all-roles-screen'),
+            };
+
+            const inputs = {
+                totalPlayers: document.getElementById('total-players'),
+                numImpostors: document.getElementById('num-impostors'),
+                gameMode: document.querySelectorAll('input[name="game-mode"]'),
+                categorySelect: document.getElementById('category-select'),
+                discussionTimer: document.getElementById('discussion-timer'),
+                hideDefinitions: document.getElementById('hide-definitions'),
+            };
+
+            const inputContainers = {
+                categorySelectContainer: document.getElementById('category-select-container'),
+            };
+
+            const buttons = {
+                start: document.getElementById('start-game-btn'),
+                showRole: document.getElementById('show-role-btn'),
+                hideRole: document.getElementById('hide-role-btn'),
+                revealAll: document.getElementById('reveal-all-btn'),
+                newGame: document.getElementById('new-game-btn'),
+                newGame2: document.getElementById('new-game-btn-2'),
+            };
+
+            const dynamicElements = {
+                passTitle: document.getElementById('pass-title'),
+                roleDisplay: document.getElementById('role-display-area'),
+                allRolesList: document.getElementById('all-roles-list'),
+                finalSecretsInfo: document.getElementById('final-secrets-info'),
+                messageBox: document.getElementById('message-box'),
+                messageText: document.getElementById('message-text'),
+                timerContainer: document.getElementById('timer-display-container'),
+                timerDisplay: document.getElementById('timer-display'),
+                gameInstructions: document.getElementById('game-instructions'),
+            };
+
+            // --- Utility Functions ---
+
+            /**
+             * Shows a custom error message.
+             * @param {string} message The error message to display.
+             */
+            function showMessage(message) {
+                dynamicElements.messageText.textContent = message;
+                dynamicElements.messageBox.classList.remove('opacity-0', '-translate-y-10');
+                dynamicElements.messageBox.classList.add('opacity-100', 'translate-y-0');
+
+                setTimeout(() => {
+                    dynamicElements.messageBox.classList.remove('opacity-100', 'translate-y-0');
+                    dynamicElements.messageBox.classList.add('opacity-0', '-translate-y-10');
+                }, 3000);
+            }
+
+            /**
+             * Shuffles an array in place using the cryptographically secure
+             * window.crypto.getRandomValues() for high-quality randomness.
+             * @param {Array<any>} array The array to shuffle.
+             */
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    // Generate a cryptographically secure random number
+                    const randomValues = new Uint32Array(1);
+                    window.crypto.getRandomValues(randomValues);
+                    const randomFloat = randomValues[0] / (0xFFFFFFFF + 1); // 2^32
+
+                    // Get a random index j from 0 to i (inclusive)
+                    const j = Math.floor(randomFloat * (i + 1));
+                    
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            /**
+             * Switches the visible screen.
+             * @param {string} screenId The key of the screen to show (from `screens` object).
+             */
+            function showScreen(screenId) {
+                Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+                if (screens[screenId]) {
+                    screens[screenId].classList.remove('hidden');
+                }
+            }
+            
+            /**
+             * Populates the category dropdown from the categoryApiMap.
+             */
+            function populateCategories() {
+                const select = inputs.categorySelect;
+                select.innerHTML = ''; // Clear existing options
+                
+                for (const [key, value] of Object.entries(categoryApiMap)) {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = value.name;
+                    select.appendChild(option);
+                }
+            }
+
+            // --- Event Handlers ---
+
+            /**
+             * Handles changes to the game mode radio buttons.
+             */
+            function handleModeChange() {
+                const selectedMode = document.querySelector('input[name="game-mode"]:checked').value;
+                const hideDefsCheckbox = document.getElementById('hide-definitions').parentElement;
+
+                // Hide all conditional inputs first
+                inputContainers.categorySelectContainer.classList.add('hidden');
+                hideDefsCheckbox.classList.add('hidden');
+
+                // Show inputs based on mode
+                if (selectedMode === 'word-classic' || selectedMode === 'word-different') {
+                    inputContainers.categorySelectContainer.classList.remove('hidden');
+                    hideDefsCheckbox.classList.remove('hidden');
+                } else if (selectedMode.startsWith('image')) {
+                    // No need for 'hide definitions' in image mode
+                }
+            }
+
+            /**
+             * Fetches a single random word and its definition from our SECURE Vercel function.
+             * @param {string} categoryQuery - The API query string for the category.
+             */
+            async function fetchRandomWord(categoryQuery) {
+                // Call our own serverless function, not the WordsAPI directly.
+                // We pass the category query as a URL parameter.
+                const url = `/api/get-word?categoryQuery=${encodeURIComponent(categoryQuery)}`;
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.error || `Server error: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (!data.word || !data.definition) {
+                        console.warn("Server returned incomplete word data, fetching another...");
+                        return await fetchRandomWord(categoryQuery); // Recursive call
+                    }
+                    return data; // Returns { word, definition }
+
+                } catch (error) {
+                    console.error("Error fetching from /api/get-word:", error);
+                    throw error; // Re-throw the error to be caught by startGame
+                }
+            }
+            
+            /**
+             * Fetches a single random image from our SECURE Vercel function.
+             */
+            async function fetchRandomImage() {
+                // Call our own serverless function, not Unsplash directly.
+                const url = `/api/get-image`;
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.error || `Server error: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+
+                    if (!data.imageUrl || !data.photographer) {
+                         console.warn("Server returned incomplete image data, fetching another...");
+                         return await fetchRandomImage(); // Recursive call
+                    }
+
+                    return data; // Returns { imageUrl, photographer, attributionUrl }
+
+                } catch (error) {
+                    console.error("Error fetching from /api/get-image:", error);
+                    throw error; // Re-throw the error to be caught by startGame
+                }
+            }
+
+
+            /**
+             * Validates settings and starts the game.
+             */
+            async function startGame() { // Made this async
+                const startBtn = buttons.start;
+                const btnText = document.getElementById('start-game-text');
+                const btnSpinner = document.getElementById('start-game-spinner');
+
+                // 1. Get and validate settings
+                const totalPlayers = parseInt(inputs.totalPlayers.value);
+                const numImpostors = parseInt(inputs.numImpostors.value);
+                const selectedMode = document.querySelector('input[name="game-mode"]:checked').value;
+                const selectedCategoryKey = inputs.categorySelect.value;
+                const selectedCategory = categoryApiMap[selectedCategoryKey];
+                const timerDuration = parseInt(inputs.discussionTimer.value);
+                const hideDefinitions = inputs.hideDefinitions.checked;
+                
+                if (isNaN(totalPlayers) || totalPlayers < 3) {
+                    showMessage("Must have at least 3 players.");
+                    return;
+                }
+                if (isNaN(numImpostors) || numImpostors < 1) {
+                    showMessage("Must have at least 1 impostor.");
+                    return;
+                }
+                if (numImpostors >= totalPlayers) {
+                    showMessage("Impostors cannot outnumber players.");
+                    return;
+                }
+                if (isNaN(timerDuration) || timerDuration < 0) {
+                    showMessage("Timer must be 0 or more seconds.");
+                    return;
+                }
+
+                // --- Show loading state ---
+                startBtn.disabled = true;
+                btnSpinner.classList.remove('hidden');
+
+
+                // 2. Get secrets based on mode
+                let pWord = '';
+                let iWord = '';
+                let pDef = ''; // Player definition
+                let iDef = ''; // Impostor definition
+                let pImageUrl = '';
+                let iImageUrl = ''; // Impostor image
+                let pAttribution = ''; // Photographer name
+                let iAttribution = ''; // Impostor photographer name
+                let categoryName = selectedCategory.name;
+                let categoryQuery = selectedCategory.query;
+
+                if (selectedMode.startsWith('word-')) {
+                    // It's a word game, fetch from our API
+                    btnText.textContent = 'Fetching Word...';
+                    try {
+                        const wordData1 = await fetchRandomWord(categoryQuery);
+                        pWord = wordData1.word;
+                        pDef = wordData1.definition;
+
+                        if (selectedMode === 'word-different') {
+                            btnText.textContent = 'Fetching Second Word...';
+                            const wordData2 = await fetchRandomWord(categoryQuery);
+                            iWord = wordData2.word;
+                            iDef = wordData2.definition;
+                        } else {
+                            iWord = pWord; // Impostor gets the same word as Player
+                            iDef = pDef;
+                        }
+
+                    } catch (error) {
+                        showMessage(error.message || "Failed to fetch word from server.");
+                        // Hide loading state on error
+                        startBtn.disabled = false;
+                        btnText.textContent = 'Start Game';
+                        btnSpinner.classList.add('hidden');
+                        return;
+                    }
+
+                } else if (selectedMode.startsWith('image')) {
+                    // It's an image game, fetch from our API
+                    btnText.textContent = 'Fetching Image...';
+                    try {
+                        const imageData = await fetchRandomImage();
+                        pImageUrl = imageData.imageUrl;
+                        pAttribution = imageData.photographer;
+
+                        if (selectedMode === 'image-different') {
+                            btnText.textContent = 'Fetching Second Image...';
+                            const imageData2 = await fetchRandomImage();
+                            iImageUrl = imageData2.imageUrl;
+                            iAttribution = imageData2.photographer;
+                        } else {
+                            iImageUrl = pImageUrl; // Not really used, but set for consistency
+                            iAttribution = pAttribution;
+                        }
+                        
+                    } catch (error) {
+                        showMessage(error.message || "Failed to fetch image from server.");
+                        // Hide loading state on error
+                        startBtn.disabled = false;
+                        btnText.textContent = 'Start Game';
+                        btnSpinner.classList.add('hidden');
+                        return;
+                    }
+                }
+
+                // 3. Store settings in global state
+                gameState = {
+                    totalPlayers,
+                    numImpostors,
+                    gameMode: selectedMode,
+                    playerWord: pWord,
+                    impostorWord: iWord,
+                    playerDef: pDef,
+                    impostorDef: iDef,
+                    playerImageUrl: pImageUrl,
+                    impostorImageUrl: iImageUrl,
+                    photographerName: pAttribution,
+                    impostorPhotographerName: iAttribution,
+                    selectedCategoryName: categoryName,
+                    timerDuration: timerDuration,
+                    hideDefinitions: hideDefinitions
+                };
+
+                // 4. Create roles array and shuffle it
+                roles = [];
+                for (let i = 0; i < numImpostors; i++) {
+                    roles.push('Impostor');
+                }
+                for (let i = 0; i < totalPlayers - numImpostors; i++) {
+                    roles.push('Player');
+                }
+                
+                // Shuffle the roles using crypto (this is secure and client-side)
+                shuffle(roles);
+
+                // 5. Reset state and switch screens
+                currentPlayerIndex = 0;
+                updatePassScreen();
+                showScreen('pass');
+
+                // --- Hide loading state on success ---
+                startBtn.disabled = false;
+                btnText.textContent = 'Start Game';
+                btnSpinner.classList.add('hidden');
+            }
+            
+            /**
+             * Updates the pass screen for the current player.
+             */
+            function updatePassScreen() {
+                dynamicElements.passTitle.textContent = `Pass to Player ${currentPlayerIndex + 1}`;
+            }
+
+            /**
+             * Shows the role for the current player.
+             */
+            function onShowRole() {
+                const currentRole = roles[currentPlayerIndex];
+                dynamicElements.roleDisplay.innerHTML = ''; // Clear previous role
+
+                if (currentRole === 'Player') {
+                    if (gameState.gameMode.startsWith('image')) {
+                        // Player - Image Mode (Classic or Different)
+                        const container = document.createElement('div');
+                        const img = document.createElement('img');
+                        img.src = gameState.playerImageUrl;
+                        img.alt = "Secret Image";
+                        img.className = "rounded-lg shadow-lg object-contain max-h-60 mx-auto"; // Slightly smaller
+                        
+                        const attribution = document.createElement('p');
+                        attribution.className = "text-xs text-gray-500 mt-2";
+                        attribution.textContent = `Photo by ${gameState.photographerName} on Unsplash`;
+
+                        img.onerror = () => {
+                             dynamicElements.roleDisplay.innerHTML = `<p class="text-red-500">Error: Image URL failed to load.</p>`;
+                        };
+                        
+                        container.appendChild(img);
+                        container.appendChild(attribution);
+                        dynamicElements.roleDisplay.appendChild(container);
+                    } else {
+                        // Player - Word Mode (Classic or Different)
+                        const definitionHtml = gameState.hideDefinitions ? '' : 
+                            `<p class="text-base text-gray-300 italic p-2 border-t border-gray-600 mt-2">${gameState.playerDef}</p>`;
+                        
+                        dynamicElements.roleDisplay.innerHTML = `
+                            <div class="space-y-3">
+                                <p class="text-2xl text-gray-400">Your word is:</p>
+                                <h3 class="text-4xl sm:text-5xl font-bold text-cyan-400 break-words">${gameState.playerWord}</h3>
+                                ${definitionHtml}
+                            </div>
+                        `;
+                    }
+                } else { // Current role is 'Impostor'
+                    if (gameState.gameMode === 'word-different') {
+                        // Impostor - Different Word Mode
+                        const definitionHtml = gameState.hideDefinitions ? '' : 
+                            `<p class="text-base text-gray-300 italic p-2 border-t border-gray-600 mt-2">${gameState.impostorDef}</p>`;
+
+                        dynamicElements.roleDisplay.innerHTML = `
+                            <div class="space-y-3">
+                                <p class="text-2xl text-gray-400">Your word is:</p>
+                                <h3 class="text-4xl sm:text-5xl font-bold text-yellow-400 break-words">${gameState.impostorWord}</h3>
+                                ${definitionHtml}
+                            </div>
+                        `;
+                    } else if (gameState.gameMode === 'image-different') {
+                        // Impostor - Different Image Mode
+                        const container = document.createElement('div');
+                        const img = document.createElement('img');
+                        img.src = gameState.impostorImageUrl;
+                        img.alt = "Secret Image";
+                        img.className = "rounded-lg shadow-lg object-contain max-h-60 mx-auto";
+                        
+                        const attribution = document.createElement('p');
+                        attribution.className = "text-xs text-gray-500 mt-2";
+                        attribution.textContent = `Photo by ${gameState.impostorPhotographerName} on Unsplash`;
+
+                        const title = document.createElement('p');
+                        title.className = "text-2xl text-gray-400 mb-3";
+                        title.textContent = "Your image is:";
+
+                        img.onerror = () => {
+                             dynamicElements.roleDisplay.innerHTML = `<p class="text-red-500">Error: Image URL failed to load.</p>`;
+                        };
+                        
+                        container.appendChild(title);
+                        container.appendChild(img);
+                        container.appendChild(attribution);
+                        dynamicElements.roleDisplay.appendChild(container);
+                    
+                    } else {
+                        // Impostor - Classic Word or Classic Image Mode
+                        dynamicElements.roleDisplay.innerHTML = `
+                            <h3 class="text-4xl sm:text-5xl font-extrabold text-red-500 animate-pulse">
+                                You are the<br>IMPOSTOR
+                            </h3>
+                        `;
+                    }
+                }
+                
+                showScreen('reveal');
+            }
+            
+            /**
+             * Formats seconds into a MM:SS string.
+             */
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+
+            /**
+             * Starts the discussion timer if one was set.
+             */
+            function startTimer() {
+                stopTimer(); // Clear any existing timer
+                let timeLeft = gameState.timerDuration;
+
+                if (timeLeft > 0) {
+                    dynamicElements.timerContainer.classList.remove('hidden');
+                    dynamicElements.gameInstructions.classList.add('hidden');
+                    dynamicElements.timerDisplay.textContent = formatTime(timeLeft);
+                    dynamicElements.timerDisplay.classList.remove('text-red-500', 'animate-pulse');
+
+                    timerInterval = setInterval(() => {
+                        timeLeft--;
+                        dynamicElements.timerDisplay.textContent = formatTime(timeLeft);
+
+                        if (timeLeft <= 0) {
+                            stopTimer();
+                            dynamicElements.timerDisplay.textContent = "TIME'S UP! VOTE NOW!";
+                            dynamicElements.timerDisplay.classList.add('text-red-500', 'animate-pulse');
+                        }
+                    }, 1000);
+                } else {
+                    dynamicElements.timerContainer.classList.add('hidden');
+                    dynamicElements.gameInstructions.classList.remove('hidden');
+                }
+            }
+
+            /**
+             * Stops the discussion timer.
+             */
+            function stopTimer() {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }
+
+
+            /**
+             * Hides the role and moves to the next player or game screen.
+             */
+            function onHideRole() {
+                currentPlayerIndex++;
+                if (currentPlayerIndex < gameState.totalPlayers) {
+                    updatePassScreen();
+                    showScreen('pass');
+                } else {
+                    // All players have seen their roles
+                    startTimer(); // Start the timer when the game begins
+                    showScreen('game');
+                }
+            }
+
+            /**
+             * Shows the final list of all roles.
+             */
+            function onRevealAllRoles() {
+                stopTimer(); // Stop timer when roles are revealed
+                
+                // Set the secret info
+                let infoHtml = '';
+                if (gameState.gameMode.startsWith('image')) {
+                    if (gameState.gameMode === 'image-different') {
+                        infoHtml = `
+                            <div class="mb-2">
+                                <strong>Player's Image:</strong> 
+                                <a href="${gameState.playerImageUrl}" target="_blank" class="text-indigo-400 underline">View Image</a>
+                                <span class="text-sm text-gray-400 italic">(Photo by ${gameState.photographerName} on Unsplash)</span>
+                            </div>
+                            <div>
+                                <strong>Impostor's Image:</strong> 
+                                <a href="${gameState.impostorImageUrl}" target="_blank" class="text-indigo-400 underline">View Image</a>
+                                <span class="text-sm text-gray-400 italic">(Photo by ${gameState.impostorPhotographerName} on Unsplash)</span>
+                            </div>
+                        `;
+                    } else { // Classic image mode
+                        infoHtml = `
+                            <strong>Player's Image:</strong> 
+                            <a href="${gameState.playerImageUrl}" target="_blank" class="text-indigo-400 underline">View Image</a>
+                            <span class="text-sm text-gray-400 italic">(Photo by ${gameState.photographerName} on Unsplash)</span>`;
+                    }
+                } else {
+                    const categoryText = `<strong>Category:</strong> ${gameState.selectedCategoryName}<br>`;
+                    const playerDefHtml = gameState.hideDefinitions ? '' : `<p class="text-sm text-gray-400 italic pl-4">Definition: ${gameState.playerDef}</p>`;
+                    const impostorDefHtml = gameState.hideDefinitions ? '' : `<p class="text-sm text-gray-400 italic pl-4">Definition: ${gameState.impostorDef}</p>`;
+
+                    if (gameState.gameMode === 'word-different') {
+                        infoHtml = `
+                                <p class="">${categoryText}</p>
+                            <div class="mb-2">
+                                <strong>Player's Word:</strong> ${gameState.playerWord}
+                                ${playerDefHtml}
+                            </div>
+                            <div>
+                                <strong>Impostor's Word:</strong> ${gameState.impostorWord}
+                                ${impostorDefHtml}
+                            </div>
+                        `;
+                    } else {
+                        infoHtml = `
+                            <p class="">${categoryText}</p>
+                            <div>
+                                <strong>Secret Word:</strong> ${gameState.playerWord}
+                                ${playerDefHtml}
+                            </div>
+                        `;
+                    }
+                }
+                dynamicElements.finalSecretsInfo.innerHTML = infoHtml;
+                
+                // Populate the roles list
+                dynamicElements.allRolesList.innerHTML = '';
+                for (let i = 0; i < roles.length; i++) {
+                    const li = document.createElement('li');
+                    li.className = 'p-3 bg-gray-800 rounded-lg flex justify-between items-center';
+                    
+                    const roleText = roles[i];
+                    let roleClass = 'text-cyan-400';
+                    if (roleText === 'Impostor') {
+                        roleClass = 'text-red-500';
+                    }
+                    
+                    li.innerHTML = `Player ${i + 1}: <span class="font-bold ${roleClass}">${roleText}</span>`;
+                    dynamicElements.allRolesList.appendChild(li);
+                }
+                
+                showScreen('allRoles');
+            }
+
+            /**
+             * Resets the game to the setup screen.
+             */
+            function onStartNewGame() {
+                stopTimer(); // Ensure timer is stopped
+
+                // Reset global state
+                gameState = {};
+                roles = [];
+                currentPlayerIndex = 0;
+                
+                // Reset inputs to default
+                inputs.totalPlayers.value = '5';
+                inputs.numImpostors.value = '1';
+                inputs.gameMode[0].checked = true;
+                inputs.categorySelect.value = '_all';
+                inputs.discussionTimer.value = '90';
+                inputs.hideDefinitions.checked = false;
+                
+                // Update conditional inputs visibility
+                handleModeChange();
+                
+                // Show setup screen
+                showScreen('setup');
+            }
+
+
+            // --- Event Listeners ---
+            inputs.gameMode.forEach(radio => {
+                radio.addEventListener('change', handleModeChange);
+            });
+            
+            buttons.start.addEventListener('click', startGame);
+            buttons.showRole.addEventListener('click', onShowRole);
+            buttons.hideRole.addEventListener('click', onHideRole);
+            buttons.revealAll.addEventListener('click', onRevealAllRoles);
+            buttons.newGame.addEventListener('click', onStartNewGame);
+            buttons.newGame2.addEventListener('click', onStartNewGame);
+
+            // --- Initial Setup ---
+            populateCategories(); // Fill the dropdown on load
+            handleModeChange(); // Set initial input visibility
+        });
+    </script>
+</body>
+</html>
